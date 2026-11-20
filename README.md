@@ -6,19 +6,21 @@
 
 ## 🌟 Asosiy Xususiyatlar
 
-1. **To‘liq Darslik Qamrovi (190 ta savol)**:
-   - **O‘zbekiston tarixi**: 9 ta mavzu (90 ta savol, 101–190)
-   - **Jahon tarixi**: 10 ta mavzu (100 ta savol, 1–100)
-   - Har bir savol, variantlar va to‘g‘ri javoblar rasmiy darslik va javoblar kalitiga 100% mos keladi.
+1. **Tanlangan 19 mavzu bo‘yicha 570 ta savol**:
+   - **O‘zbekiston tarixi**: 9 ta mavzu, 270 ta savol
+   - **Jahon tarixi**: 10 ta mavzu, 300 ta savol
+   - 570 savollik to‘plam 2025-yilgi darsliklarning tanlangan mavzulari asosida tuzilgan.
+   - Har bir mavzuda **30 ta savol: 10 ta oson, 10 ta o‘rta va 10 ta qiyin**. Mavzu sahifasida daraja tanlab, mashq yoki imtihon rejimida ishlash mumkin.
+   - Oson: asosiy faktlar; o‘rta: tafsilotlar va tushunchalar; qiyin: ketma-ketlik, taqqoslash va sabab–oqibat.
 
 2. **Ikki xil o‘rganish rejimi**:
    - 📖 **Mashq rejimi (Practice Mode)**: Har bir tanlangan javobdan so‘ng to‘g‘ri yoki noto‘g‘ri ekanligi darhol yashil/qizil rangda ko‘rsatiladi. Vaqt cheklovisiz erkin o‘rganish.
    - ⏱️ **Imtihon rejimi (Exam Mode)**: Har bir savol uchun 60 soniyali orqaga hisoblovchi taymer, savollar bo‘yicha tezkor o‘tish paneli (Question Palette), javoblarni erkin o‘zgartirish imkoniyati va yakuniy natijalar.
 
 3. **🔀 Aralash test (Mixed Test)**:
-   - Faqat O‘zbekiston tarixi bo‘yicha aralash test (10, 20, 30 ta yoki barcha 90 ta)
-   - Faqat Jahon tarixi bo‘yicha aralash test (10, 20, 30 ta yoki barcha 100 ta)
-   - Umumiy tarix bo‘yicha aralash test (15, 30, 50 ta yoki barcha 190 ta)
+   - Faqat O‘zbekiston tarixi bo‘yicha aralash test (10, 20, 30 ta yoki barcha 270 ta)
+   - Faqat Jahon tarixi bo‘yicha aralash test (10, 20, 30 ta yoki barcha 300 ta)
+   - Umumiy tarix bo‘yicha aralash test (15, 30, 50 ta yoki barcha 570 ta)
 
 4. **📊 Aniq va Ko‘rgazmali Natijalar (Green & Red Statistic Bars)**:
    - Katta foiz ko‘rsatkichi va kasr (masalan: `9 / 10 ta to‘g‘ri (90%)`)
@@ -70,3 +72,11 @@ Ushbu loyiha 100% statik fayllardan (HTML, CSS, JS) iborat bo‘lgani uchun uni 
    `https://<username>.github.io/tarix-testlari/`
 
 Saytingiz butunlay bepul va cheklovlarsiz ishlaydi!
+
+## Savollar bazasini tekshirish
+
+Node.js bilan: `node --test tests/question-bank.test.cjs`.
+
+`data.js` dagi har bir savolda `difficulty` (`easy`, `medium`, `hard`) va mavzu ichidagi `number` (1–30) bor. Avvalgi 190 savolning ID raqamlari saqlangan, yangi savollar 191–570 ID raqamlarini olgan. Shu sababli oldingi xatolar bankidagi ID raqamlari boshqa savolga biriktirilmaydi. Variantlar va javob harflari 570 savollik to‘plamga moslangan; oldin saqlangan xatolar o‘z variantlari bilan ishlashda davom etadi.
+
+Daraja bo‘yicha testlar umumiy statistikaga qo‘shiladi, lekin mavzuning barcha darajalar bo‘yicha eng yaxshi natijasini almashtirmaydi.

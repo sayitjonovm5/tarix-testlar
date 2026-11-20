@@ -570,6 +570,24 @@ a {
   color: var(--accent);
 }
 
+.difficulty-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.difficulty-picker select {
+  max-width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+}
+
 .mode-header {
   margin-bottom: 24px;
 }

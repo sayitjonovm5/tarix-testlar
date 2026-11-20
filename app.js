@@ -126,6 +126,7 @@ const Storage = {
       q: q.q,
       opts: q.opts,
       ans: q.ans,
+      difficulty: q.difficulty,
       userChoice,
       timestamp: Date.now()
     };
@@ -172,6 +173,13 @@ const Storage = {
 // =====================================================
 // APPLICATION STATE
 // =====================================================
+const DIFFICULTY_LABELS = { all: "Barcha darajalar", easy: "Oson", medium: "O‘rta", hard: "Qiyin" };
+
+function questionCount(scope = "all") {
+  const sections = scope === "all" ? Object.values(HISTORY_DATA) : [HISTORY_DATA[scope]];
+  return sections.reduce((sum, section) => sum + section.topics.reduce((n, topic) => n + topic.questions.length, 0), 0);
+}
+
 const AppState = {
   activeSection: "uzbekiston", // "uzbekiston" or "jahon"
   searchQuery: "",
@@ -417,7 +425,7 @@ function handleSearch(val) {
 // =====================================================
 // VIEW: TOPIC MODE SELECTION (Mashq / Imtihon)
 // =====================================================
-function openTopicMode(topicId) {
+function openTopicMode(topicId, difficulty = "all") {
   sounds.click();
   let foundTopic = null;
   let sectionKey = "";
@@ -431,7 +439,12 @@ function openTopicMode(topicId) {
   }
 
   if (!foundTopic) return;
-  const count = foundTopic.questions.length;
+  if (!Object.hasOwn(DIFFICULTY_LABELS, difficulty)) difficulty = "all";
+  const count = foundTopic.questions.filter(q => difficulty === "all" || q.difficulty === difficulty).length;
+  const difficultyOptions = Object.entries(DIFFICULTY_LABELS).map(([value, label]) => {
+    const size = foundTopic.questions.filter(q => value === "all" || q.difficulty === value).length;
+    return `<option value="${value}" ${value === difficulty ? "selected" : ""}>${label} (${size} ta)</option>`;
+  }).join("");
 
   const html = `
     <div class="back-link" onclick="renderHome()">
@@ -441,6 +454,10 @@ function openTopicMode(topicId) {
     <div class="mode-header">
       <h2>${foundTopic.num}-mavzu. ${foundTopic.name}</h2>
       <p>${count} ta savol &middot; ${foundTopic.pages} (${HISTORY_DATA[sectionKey].name})</p>
+      <div class="difficulty-picker">
+        <label for="topicDifficulty">Qiyinlik darajasi</label>
+        <select id="topicDifficulty" onchange="openTopicMode('${topicId}', this.value)">${difficultyOptions}</select>
+      </div>
     </div>
 
     <div class="mode-cards-grid">
@@ -450,7 +467,7 @@ function openTopicMode(topicId) {
         <h3>Mashq rejimi</h3>
         <p>Savollarni shoshmasdan o'rganing. Har bir tanlangan javobdan keyin to'g'ri/noto'g'ri darhol ko'rsatiladi. Vaqt chegaralanmagan.</p>
         <div class="count-selector-group">
-          <button class="count-btn primary" onclick="startTopicQuiz('${topicId}', 'practice', ${count})">
+          <button class="count-btn primary" onclick="startTopicQuiz('${topicId}', 'practice', ${count}, '${difficulty}')">
             Barcha ${count} ta savol
           </button>
         </div>
@@ -462,8 +479,8 @@ function openTopicMode(topicId) {
         <h3>Imtihon rejimi</h3>
         <p>Haqiqiy bilimingizni sinab ko'ring! Har bir savolga 60 soniya. Natijalar va batafsil xatolar tahlili test oxirida taqdim etiladi.</p>
         <div class="count-selector-group">
-          <button class="count-btn" onclick="startTopicQuiz('${topicId}', 'exam', 5)">5 ta savol</button>
-          <button class="count-btn primary" onclick="startTopicQuiz('${topicId}', 'exam', ${count})">Barcha ${count} ta</button>
+          <button class="count-btn" onclick="startTopicQuiz('${topicId}', 'exam', 5, '${difficulty}')">5 ta savol</button>
+          <button class="count-btn primary" onclick="startTopicQuiz('${topicId}', 'exam', ${count}, '${difficulty}')">Barcha ${count} ta</button>
         </div>
       </div>
     </div>
@@ -508,12 +525,12 @@ function openAralashModal() {
       <div class="mode-card">
         <div class="mode-card-icon">🏛️</div>
         <h3>Umumiy Tarix (Ikkala fan)</h3>
-        <p>Ham O'zbekiston, ham Jahon tarixidan barcha 190 ta savoldan tasodifiy tuzilgan test.</p>
+        <p>Ham O'zbekiston, ham Jahon tarixidan barcha ${questionCount()} ta savoldan tasodifiy tuzilgan test.</p>
         <div class="count-selector-group">
           <button class="count-btn" onclick="startAralashQuiz('all', 15)">15 ta</button>
           <button class="count-btn" onclick="startAralashQuiz('all', 30)">30 ta</button>
           <button class="count-btn primary" onclick="startAralashQuiz('all', 50)">50 ta</button>
-          <button class="count-btn" onclick="startAralashQuiz('all', 190)">Hammasi (190)</button>
+          <button class="count-btn" onclick="startAralashQuiz('all', ${questionCount()})">Hammasi (${questionCount()})</button>
         </div>
       </div>
     </div>
@@ -530,6 +547,8 @@ class QuizSession {
     this.title = options.title;
     this.subtitle = options.subtitle || "";
     this.topicId = options.topicId || null;
+    this.difficulty = options.difficulty || "all";
+    this.scope = options.scope || null;
     this.mode = options.mode; // 'practice' or 'exam'
     this.questions = options.questions; // array of questions
     this.currentIndex = 0;
@@ -670,7 +689,7 @@ class QuizSession {
 
     // Save statistics & best score
     Storage.recordTestCompleted(totalCount, correctCount);
-    if (this.topicId) {
+    if (this.topicId && this.difficulty === "all") {
       Storage.setBest(this.topicId, percentage);
     }
 
@@ -781,7 +800,7 @@ class QuizSession {
       </div>
 
       <div class="quiz-controls-row">
-        <div class="quiz-question-num">Savol ${qIndex + 1} / ${total}</div>
+        <div class="quiz-question-num">Savol ${qIndex + 1} / ${total}${currentQ.difficulty ? ` · ${DIFFICULTY_LABELS[currentQ.difficulty]}` : ""}</div>
         <button class="btn-quit" onclick="if(confirmLeaveQuiz()) renderHome();">Chiqish ✕</button>
       </div>
 
@@ -808,7 +827,7 @@ class QuizSession {
 // =====================================================
 // QUIZ LAUNCHERS
 // =====================================================
-function startTopicQuiz(topicId, mode, questionCount) {
+function startTopicQuiz(topicId, mode, questionCount, difficulty = "all") {
   let targetTopic = null;
   for (const sKey of ["uzbekiston", "jahon"]) {
     const t = HISTORY_DATA[sKey].topics.find(item => item.id === topicId);
@@ -819,12 +838,15 @@ function startTopicQuiz(topicId, mode, questionCount) {
   }
   if (!targetTopic) return;
 
-  const shuffled = shuffleArray([...targetTopic.questions]).slice(0, questionCount);
+  const pool = targetTopic.questions.filter(q => difficulty === "all" || q.difficulty === difficulty);
+  const shuffled = shuffleArray(pool).slice(0, questionCount);
+  if (!shuffled.length) return;
 
   AppState.quiz = new QuizSession({
     title: targetTopic.name,
     subtitle: `${shuffled.length} ta savol`,
     topicId,
+    difficulty,
     mode,
     questions: shuffled
   });
@@ -854,6 +876,7 @@ function startAralashQuiz(scope, questionCount) {
     subtitle: `${selectedQuestions.length} ta savol`,
     topicId: null,
     mode: "exam",
+    scope,
     questions: selectedQuestions
   });
 
@@ -868,7 +891,8 @@ function startMistakesQuiz() {
     id: m.id,
     q: m.q,
     opts: m.opts,
-    ans: m.ans
+    ans: m.ans,
+    difficulty: m.difficulty
   }));
 
   AppState.quiz = new QuizSession({
@@ -915,6 +939,7 @@ function renderResults(quiz, correctCount, percentage) {
       q: q.q,
       opts: q.opts,
       ans: q.ans,
+      difficulty: q.difficulty,
       userAns,
       isCorrect
     };
@@ -1047,9 +1072,11 @@ function retryCurrentQuiz() {
   }
   const q = AppState.quiz;
   if (q.topicId) {
-    startTopicQuiz(q.topicId, q.mode, q.questions.length);
+    startTopicQuiz(q.topicId, q.mode, q.questions.length, q.difficulty);
+  } else if (q.scope) {
+    startAralashQuiz(q.scope, q.questions.length);
   } else {
-    startAralashQuiz(AppState.activeSection, q.questions.length);
+    startMistakesQuiz();
   }
 }
 
@@ -1172,9 +1199,9 @@ function openStatsModal() {
       </div>
 
       <div style="background: var(--card-alt); padding: 14px 18px; border-radius: var(--radius-md); font-size: 0.88rem; margin-bottom: 20px; line-height: 1.6;">
-        <div>📚 <strong>Jami savollar bazasi:</strong> 190 ta (11-sinf darsligi)</div>
-        <div><img src="uzb-flag.png" class="uz-flag" alt="O‘zbekiston"> <strong>O‘zbekiston tarixi:</strong> 9 ta mavzu (90 savol)</div>
-        <div>🌍 <strong>Jahon tarixi:</strong> 10 ta mavzu (100 savol)</div>
+        <div>📚 <strong>Jami savollar bazasi:</strong> ${questionCount()} ta (11-sinf darsligi)</div>
+        <div><img src="uzb-flag.png" class="uz-flag" alt="O‘zbekiston"> <strong>O‘zbekiston tarixi:</strong> ${uzTopics.length} ta mavzu (${questionCount("uzbekiston")} savol)</div>
+        <div>🌍 <strong>Jahon tarixi:</strong> ${jhTopics.length} ta mavzu (${questionCount("jahon")} savol)</div>
         <div>💾 <strong>Xotira:</strong> Barcha ma'lumotlar qurilmangiz brauzerida saqlanmoqda.</div>
       </div>
 
